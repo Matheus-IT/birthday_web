@@ -1,11 +1,11 @@
 <template>
-    <div class="item">
+    <div class="item" @click="emit('select')" @keydown.enter.space.prevent="emit('select')" role="button" tabindex="0">
         <div class="details details-card">
             <div>
                 <h3>{{ name }}</h3>
                 <p class="birthday-text">{{ formattedBirthday }}</p>
             </div>
-            <button type="button" @click="emit('edit')" aria-label="Edit item" class="edit-btn">
+            <button type="button" @click.stop="emit('edit')" aria-label="Edit item" class="edit-btn">
                 Edit
             </button>
         </div>
@@ -20,7 +20,7 @@ const props = defineProps({
     birthday: { type: [String, Date], required: true }
 })
 
-const emit = defineEmits(['edit'])
+const emit = defineEmits(['edit', 'select'])
 
 const parsedDate = computed(() => {
     if (props.birthday instanceof Date) return props.birthday
@@ -52,6 +52,7 @@ const formattedBirthday = computed(() =>
     margin-top: 2rem;
     display: flex;
     position: relative;
+    cursor: pointer;
 }
 
 .details {
