@@ -1,20 +1,44 @@
 <script setup>
 import MemberItem from './MemberItem.vue'
 import MemberModal from './MemberModal.vue'
-import DocumentationIcon from './icons/IconDocumentation.vue'
-import ToolingIcon from './icons/IconTooling.vue'
-import EcosystemIcon from './icons/IconEcosystem.vue'
-import CommunityIcon from './icons/IconCommunity.vue'
-import SupportIcon from './icons/IconSupport.vue'
+import { apiUrls } from '../api/urls.js'
+import { onMounted, ref } from 'vue'
 
-import { ref } from 'vue'
 
-const members = [
-    { name: 'Guilherme', birthday: '1990-01-01' },
-    { name: 'Maria', birthday: '1995-05-15' },
-    { name: 'João', birthday: '1988-12-30' },
-    { name: 'Ana', birthday: '2000-07-22' }
-]
+const members = ref([])
+const loading = ref(false)
+const loadError = ref(null)
+
+onMounted(async () => {
+    loading.value = true
+
+    try {
+        const storedToken = localStorage.getItem('authToken') || import.meta.env.VITE_API_TOKEN
+        const headers = storedToken ? { 'Authorization': `Token ${storedToken}` } : {}
+        const res = await fetch(apiUrls.getAllMembers(), { headers })
+        console.log('Fetch response:', res);
+
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`)
+        }
+        const data = await res.json()
+        const normalized = data.map(member => ({
+            id: member.id,
+            name: member.name,
+            birthday: new Date(member.birth_date),
+            phoneNumber: member.phone_number,
+            profilePicture: member.profile_picture,
+            department: member.department,
+        }))
+        members.value = normalized
+    }
+    catch (error) {
+        loadError.value = 'Erro ao carregar membros'
+        console.error(error)
+    } finally {
+        loading.value = false
+    }
+})
 
 const selectedMember = ref(null)
 
@@ -31,6 +55,8 @@ function closeModal() {
 <template>
     <section>
         <h2>Todos os membros</h2>
+        <p v-if="loading">Carregando...</p>
+        <p v-if="!loading && loadError" class="error">{{ loadError }}</p>
         <ul>
             <li style="list-style:none" v-for="member in members" :key="member.name">
                 <MemberItem :name="member.name" :birthday="member.birthday" @select="openMember(member)" />
@@ -41,3 +67,9 @@ function closeModal() {
             @close="closeModal" />
     </section>
 </template>
+
+<style scoped>
+.error {
+    color: #b91c1c
+}
+</style>
