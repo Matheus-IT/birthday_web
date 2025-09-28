@@ -22,10 +22,12 @@ onMounted(async () => {
             throw new Error(`HTTP ${res.status}`)
         }
         const data = await res.json()
+        console.log('Fetched members data:', data);
+
         const normalized = data.map(member => ({
             id: member.id,
             name: member.name,
-            birthday: new Date(member.birth_date),
+            birthday: new Date(member.birth_date + 'T12:00:00'), // the + 12hrs is a simple fix for timezone issues
             phoneNumber: member.phone_number,
             profilePicture: member.profile_picture,
             department: member.department,
