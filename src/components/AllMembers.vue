@@ -31,6 +31,7 @@ onMounted(async () => {
             phoneNumber: member.phone_number,
             profilePicture: member.profile_picture,
             department: member.department,
+            is_birthday_today: member.is_birthday_today,
         }))
         members.value = normalized
     }
@@ -61,7 +62,8 @@ function closeModal() {
         <p v-if="!loading && loadError" class="error">{{ loadError }}</p>
         <ul>
             <li style="list-style:none" v-for="member in members" :key="member.name">
-                <MemberItem :name="member.name" :birthday="member.birthday" @select="openMember(member)" />
+                <MemberItem :name="member.name" :birthday="member.birthday"
+                    :is_birthday_today="member.is_birthday_today" @select="openMember(member)" />
             </li>
         </ul>
 
