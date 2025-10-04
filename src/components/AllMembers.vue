@@ -441,8 +441,15 @@ onMounted(() => {
     border-radius: 8px;
     border: 1px solid var(--color-border);
     background-color: var(--color-background);
+    color: var(--color-text);
     font-weight: 500;
     transition: border-color 0.2s ease;
+}
+
+/* Ensure dropdown options also respect theme colors */
+.page-size-selector select option {
+    color: var(--color-text);
+    background-color: var(--color-background);
 }
 
 .page-size-selector select:focus {
