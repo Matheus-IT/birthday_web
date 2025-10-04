@@ -24,7 +24,7 @@ import { computed } from 'vue'
 const props = defineProps({
     name: { type: String, required: true },
     birthday: { type: [String, Date], required: true },
-    is_birthday_today: { type: Boolean, required: true },
+    isBirthdayToday: { type: Boolean, required: true },
 })
 
 const emit = defineEmits(['edit', 'select'])
@@ -53,7 +53,7 @@ const formattedBirthday = computed(() =>
         : String(props.birthday)
 )
 
-const isBirthdayToday = computed(() => Boolean(props.is_birthday_today))
+const isBirthdayToday = computed(() => Boolean(props.isBirthdayToday))
 
 const itemAriaLabel = computed(() => {
     const baseLabel = `${props.name}'s birthday`
