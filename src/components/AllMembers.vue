@@ -244,10 +244,6 @@ function debounce(fn, delay = 300) {
 
 const debouncedSearch = debounce(() => fetchMembers(1), 300)
 
-function searchMembers() {
-    fetchMembers(1)
-}
-
 // Live search while typing (debounced)
 watch(searchQuery, () => {
     debouncedSearch()
@@ -274,8 +270,8 @@ onMounted(() => {
                     </select>
                 </div>
                 <div class="all-members-search">
-                    <input type="text" placeholder="Buscar membro por nome..." v-model="searchQuery">
-                    <button type="button" @click="searchMembers">Buscar</button>
+                    <input type="text" placeholder="Buscar membro por nome..." v-model="searchQuery"
+                        @keyup.enter="fetchMembers(1)">
                 </div>
             </div>
             <ul v-if="members.length" class="member-list">
@@ -343,6 +339,8 @@ onMounted(() => {
     align-items: center;
     gap: 0.5rem;
     flex-grow: 1;
+    min-width: 0;
+    /* allow input to shrink on small screens */
 }
 
 .all-members-search input[type="text"] {
@@ -352,24 +350,8 @@ onMounted(() => {
     border: 1px solid var(--color-border);
     background: var(--color-background);
     color: var(--color-text);
-    min-width: 240px;
-    flex-grow: 1;
-}
-
-.all-members-search button {
-    height: var(--control-h);
-    padding: 0 0.9rem;
-    border-radius: 8px;
-    border: 1px solid var(--color-border);
-    background: var(--color-background);
-    color: var(--color-text);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-}
-
-.all-members-search button:hover {
-    background: var(--color-background-mute);
+    min-width: 0;
+    width: 100%;
 }
 
 .member-list {
@@ -503,6 +485,43 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        row-gap: 0.5rem;
+    }
+
+    /* Place numbers on their own full-width row */
+    .page-list {
+        order: 2;
+        width: 100%;
+        justify-content: center;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.25rem;
+        /* avoid scrollbar overlap */
+    }
+
+    /* Make Prev/Next share the first row nicely */
+    .pagination .page-btn {
+        flex: 1 1 calc(50% - 0.25rem);
+        min-width: calc(50% - 0.25rem);
+    }
+
+    .all-members-top-div {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .page-size-selector {
+        justify-content: space-between;
+    }
+
+    .all-members-search {
+        width: 100%;
+    }
+
     .pagination-meta {
         flex-direction: column;
         align-items: stretch;
