@@ -11,7 +11,7 @@ const loadError = ref(null)
 const selectedMember = ref(null)
 
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(5)
 const pageSizeOptions = [5, 10, 20, 50]
 const totalItems = ref(0)
 const paginationLinks = ref({ next: null, previous: null })
@@ -88,13 +88,21 @@ async function fetchMembers(page = currentPage.value) {
     try {
         const storedToken = localStorage.getItem('authToken') || import.meta.env.VITE_API_TOKEN
         const headers = storedToken ? { 'Authorization': `Token ${storedToken}` } : {}
-        const res = await fetch(apiUrls.getAllMembers({ page, pageSize: pageSize.value }), { headers })
+        const url = apiUrls.getAllMembers({ page, pageSize: pageSize.value })
+        const res = await fetch(url, { headers })
 
         if (!res.ok) {
             throw new Error(`HTTP ${res.status}`)
         }
 
         const data = await res.json()
+        console.log('Members url:', url);
+        console.log('Request headers:', headers);
+        console.log('Response status:', res.status);
+        console.log('Fetched members data:', data);
+
+
+
         const resultList = Array.isArray(data?.results)
             ? data.results
             : Array.isArray(data)
