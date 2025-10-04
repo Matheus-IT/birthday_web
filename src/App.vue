@@ -23,6 +23,7 @@ header {
 }
 
 @media (min-width: 1024px) {
+
     /* Keep the logo centered on desktop for a tighter connection with page content */
     .logo {
         margin: 0 auto 1rem;
