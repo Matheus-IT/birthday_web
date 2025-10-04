@@ -72,12 +72,13 @@ async function onSubmit(e) {
     <main class="login-page">
         <section class="card">
             <h1>Login</h1>
-            <p class="hint">Paste your API token to continue.</p>
+            <p class="hint">Entre com suas credenciais.</p>
             <form @submit="onSubmit">
                 <label for="email">Email</label>
-                <input type="text" v-model="email" placeholder="e.g. user@example.com">
+                <input id="email" name="email" type="email" v-model="email" placeholder="e.g. user@example.com"
+                    autocomplete="username" required>
 
-                <label for="password">Password</label>
+                <label for="password">Senha</label>
                 <input id="password" name="password" type="password" v-model="password" placeholder="e.g. abc123..."
                     autocomplete="off" required />
 
@@ -95,35 +96,59 @@ async function onSubmit(e) {
 <style scoped>
 .login-page {
     min-height: 70vh;
-    display: grid;
-    place-items: center;
-    padding: 2rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 1rem 2rem 2rem;
+    width: 100%;
 }
 
 .card {
     width: 100%;
     max-width: 420px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 1.5rem;
-    background: white;
+    background: var(--color-background-soft);
+    color: var(--color-text);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-inline: auto;
 }
 
 form {
     display: grid;
     gap: 0.75rem;
+    grid-template-columns: 1fr;
+}
+
+h1 {
+    color: var(--color-heading);
 }
 
 label {
     font-weight: 600;
+    color: var(--color-heading);
 }
 
 input {
     padding: 0.6rem 0.8rem;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     font-size: 0.95rem;
+    background: var(--color-background);
+    color: var(--color-heading);
+    width: 100%;
+    max-width: 100%;
+}
+
+input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+input::placeholder {
+    color: #9ca3af;
 }
 
 button {
@@ -135,6 +160,11 @@ button {
     color: white;
     font-weight: 600;
     cursor: pointer;
+    width: 100%;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 button:disabled {
@@ -143,11 +173,22 @@ button:disabled {
 }
 
 .hint {
-    color: #6b7280;
+    color: var(--color-text);
     margin: 0.25rem 0 1rem 0;
 }
 
 .error {
     color: #b91c1c;
+}
+
+/* Ensure grid children can shrink and never overflow the card */
+form>* {
+    min-width: 0;
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 1rem;
+    }
 }
 </style>

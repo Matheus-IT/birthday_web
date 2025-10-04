@@ -22,14 +22,13 @@ a,
 }
 
 @media (min-width: 1024px) {
+  /* Keep a simple single-column layout on desktop */
   body {
-    display: flex;
-    place-items: center;
+    display: block;
   }
 
   #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+    display: block;
+    padding: 2rem;
   }
 }
