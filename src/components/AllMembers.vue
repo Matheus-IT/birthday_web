@@ -2,13 +2,14 @@
 import MemberItem from './MemberItem.vue'
 import MemberModal from './MemberModal.vue'
 import { apiUrls } from '../api/urls.js'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 
 const members = ref([])
 const loading = ref(false)
 const loadError = ref(null)
 const selectedMember = ref(null)
+const searchQuery = ref('')
 
 const currentPage = ref(1)
 const pageSize = ref(5)
@@ -81,6 +82,49 @@ const hasPreviousPage = computed(() => {
     return currentPage.value > 1
 })
 
+// Build a condensed list of page buttons: numbers and ellipses
+const pageButtons = computed(() => {
+    const total = totalPages.value
+    const current = currentPage.value
+
+    if (total <= 7) {
+        return Array.from({ length: total }, (_, i) => i + 1)
+    }
+
+    const pages = [1]
+
+    // Left ellipsis
+    if (current > 4) {
+        pages.push('…')
+    }
+
+    // Middle window around current (ensure within [2, total-1])
+    const start = Math.max(2, current - 1)
+    const end = Math.min(total - 1, current + 1)
+    for (let p = start; p <= end; p++) {
+        pages.push(p)
+    }
+
+    // Right ellipsis
+    if (current < total - 3) {
+        pages.push('…')
+    }
+
+    pages.push(total)
+    return pages
+})
+
+// Range information for "Exibindo X–Y de Z"
+const pageStart = computed(() => {
+    if (!totalItems.value) return 0
+    return (currentPage.value - 1) * pageSize.value + 1
+})
+
+const pageEnd = computed(() => {
+    if (!totalItems.value) return 0
+    return Math.min(totalItems.value, currentPage.value * pageSize.value)
+})
+
 async function fetchMembers(page = currentPage.value) {
     loading.value = true
     loadError.value = null
@@ -88,7 +132,7 @@ async function fetchMembers(page = currentPage.value) {
     try {
         const storedToken = localStorage.getItem('authToken') || import.meta.env.VITE_API_TOKEN
         const headers = storedToken ? { 'Authorization': `Token ${storedToken}` } : {}
-        const url = apiUrls.getAllMembers({ page, pageSize: pageSize.value })
+        const url = apiUrls.getAllMembers({ page, pageSize: pageSize.value, search: searchQuery.value })
         const res = await fetch(url, { headers })
 
         if (!res.ok) {
@@ -160,6 +204,26 @@ function goToPreviousPage() {
     }
 }
 
+function goToFirstPage() {
+    if (currentPage.value > 1) {
+        fetchMembers(1)
+    }
+}
+
+function goToLastPage() {
+    const total = totalPages.value
+    if (currentPage.value < total) {
+        fetchMembers(total)
+    }
+}
+
+function goToPage(page) {
+    const total = totalPages.value
+    if (typeof page === 'number' && page >= 1 && page <= total && page !== currentPage.value) {
+        fetchMembers(page)
+    }
+}
+
 function onPageSizeChange(event) {
     const newSize = Number(event.target.value)
 
@@ -168,6 +232,26 @@ function onPageSizeChange(event) {
         fetchMembers(1)
     }
 }
+
+// Debounce helper (simple, no external lib)
+function debounce(fn, delay = 300) {
+    let t
+    return (...args) => {
+        clearTimeout(t)
+        t = setTimeout(() => fn(...args), delay)
+    }
+}
+
+const debouncedSearch = debounce(() => fetchMembers(1), 300)
+
+function searchMembers() {
+    fetchMembers(1)
+}
+
+// Live search while typing (debounced)
+watch(searchQuery, () => {
+    debouncedSearch()
+})
 
 onMounted(() => {
     fetchMembers()
@@ -178,31 +262,61 @@ onMounted(() => {
 <template>
     <section>
         <h2>Todos os membros</h2>
-        <p v-if="loading">Carregando...</p>
-        <p v-if="!loading && loadError" class="error">{{ loadError }}</p>
-        <ul v-if="members.length">
-            <li style="list-style:none" v-for="member in members" :key="member.name">
-                <MemberItem :name="member.name" :birthday="member.birthday" :is-birthday-today="member.isBirthdayToday"
-                    @select="openMember(member)" />
-            </li>
-        </ul>
-        <p v-else-if="!loading && !loadError" class="empty-state">Nenhum membro encontrado.</p>
 
-        <div v-if="!loadError" class="page-size-selector">
-            <label for="page-size">Itens por página</label>
-            <select id="page-size" :value="pageSize" @change="onPageSizeChange" :disabled="loading">
-                <option v-for="option in pageSizeOptions" :key="option" :value="option">{{ option }}</option>
-            </select>
+        <div class="all-members-container">
+            <p v-if="loading">Carregando...</p>
+            <p v-if="!loading && loadError" class="error">{{ loadError }}</p>
+            <div class="all-members-top-div">
+                <div class="page-size-selector">
+                    <label for="page-size">Itens por página</label>
+                    <select id="page-size" :value="pageSize" @change="onPageSizeChange" :disabled="loading">
+                        <option v-for="option in pageSizeOptions" :key="option" :value="option">{{ option }}</option>
+                    </select>
+                </div>
+                <div class="all-members-search">
+                    <input type="text" placeholder="Buscar membro por nome..." v-model="searchQuery">
+                    <button type="button" @click="searchMembers">Buscar</button>
+                </div>
+            </div>
+            <ul v-if="members.length" class="member-list">
+                <li style="list-style:none" v-for="member in members" :key="member.name">
+                    <MemberItem :name="member.name" :birthday="member.birthday"
+                        :is-birthday-today="member.isBirthdayToday" @select="openMember(member)" />
+                </li>
+            </ul>
+            <p v-else-if="!loading && !loadError" class="empty-state">Nenhum membro encontrado.</p>
+
+            <div v-if="!loadError" class="pagination-card">
+                <div class="pagination" role="navigation" aria-label="Paginação">
+                    <button type="button" class="page-btn first-btn" @click="goToFirstPage"
+                        :disabled="loading || currentPage === 1" aria-label="Primeira página">« Primeiro</button>
+
+                    <button type="button" class="page-btn" @click="goToPreviousPage"
+                        :disabled="loading || !hasPreviousPage" aria-label="Página anterior">‹ Anterior</button>
+
+                    <ul class="page-list" aria-live="polite">
+                        <li v-for="(item, idx) in pageButtons" :key="idx">
+                            <span v-if="item === '…'" class="ellipsis" aria-hidden="true">{{ item }}</span>
+                            <button v-else type="button" class="page-number" :class="{ active: item === currentPage }"
+                                :aria-current="item === currentPage ? 'page' : null" @click="goToPage(item)"
+                                :disabled="loading || item === currentPage">
+                                {{ item }}
+                            </button>
+                        </li>
+                    </ul>
+
+                    <button type="button" class="page-btn" @click="goToNextPage" :disabled="loading || !hasNextPage"
+                        aria-label="Próxima página">Próxima ›</button>
+
+                    <button type="button" class="page-btn last-btn" @click="goToLastPage"
+                        :disabled="loading || currentPage === totalPages" aria-label="Última página">Último »</button>
+                </div>
+            </div>
+
+            <MemberModal v-if="selectedMember" :name="selectedMember.name" :birthday="selectedMember.birthday"
+                @close="closeModal" />
         </div>
 
-        <div v-if="!loadError" class="pagination">
-            <button type="button" @click="goToPreviousPage" :disabled="loading || !hasPreviousPage">Anterior</button>
-            <span class="page-status">Página {{ currentPage }} de {{ totalPages }}</span>
-            <button type="button" @click="goToNextPage" :disabled="loading || !hasNextPage">Próxima</button>
-        </div>
-
-        <MemberModal v-if="selectedMember" :name="selectedMember.name" :birthday="selectedMember.birthday"
-            @close="closeModal" />
     </section>
 </template>
 
@@ -211,52 +325,201 @@ onMounted(() => {
     color: #b91c1c
 }
 
-.pagination {
-    margin-top: 1.5rem;
+.all-members-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.all-members-top-div {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
+    /* Shared control height for select, input and button */
+    --control-h: 36px;
 }
 
-.pagination button {
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    border: 1px solid #d1d5db;
-    background-color: #f3f4f6;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.pagination button:hover:enabled {
-    background-color: #e5e7eb;
-}
-
-.pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.page-status {
-    font-weight: 500;
-    color: #374151;
-}
-
-.page-size-selector {
-    margin-top: 1.5rem;
+.all-members-search {
     display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-grow: 1;
+}
+
+.all-members-search input[type="text"] {
+    height: var(--control-h);
+    padding: 0 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-background);
+    color: var(--color-text);
+    min-width: 240px;
+    flex-grow: 1;
+}
+
+.all-members-search button {
+    height: var(--control-h);
+    padding: 0 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-background);
+    color: var(--color-text);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+
+.all-members-search button:hover {
+    background: var(--color-background-mute);
+}
+
+.member-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 1rem;
+    padding: 0;
+}
+
+.pagination-card {
+    margin-top: 1.5rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-background-soft);
+    border-radius: 12px;
+    padding: 0.75rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.pagination-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.25rem 0.5rem 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.range {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.pagination {
+    margin-top: 0.75rem;
+    display: flex;
+    justify-content: center;
     align-items: center;
     gap: 0.5rem;
 }
 
+.pagination button,
+.page-number,
+.page-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-weight: 500;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.pagination button:hover:enabled,
+.page-number:hover:enabled,
+.page-btn:hover:enabled {
+    background-color: var(--color-background-mute);
+    border-color: var(--color-border-hover);
+}
+
+.pagination button:disabled,
+.page-number:disabled,
+.page-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background-color: var(--color-background-soft);
+}
+
+.page-status {
+    font-weight: 500;
+    color: #4b5563;
+    padding: 0 0.5rem;
+}
+
+.page-size-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4b5563;
+}
+
 .page-size-selector select {
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.5rem;
-    border: 1px solid #d1d5db;
-    background-color: #fff;
+    height: var(--control-h);
+    padding: 0 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-background);
+    font-weight: 500;
+    transition: border-color 0.2s ease;
+}
+
+.page-size-selector select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.page-list {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    margin: 0 0.25rem;
+    padding: 0;
+    gap: 0.25rem;
+}
+
+.page-number {
+    min-width: 2.25rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--color-border);
+}
+
+.page-number.active {
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.25) 0%, rgba(99, 102, 241, 0.14) 100%);
+    border-color: #6366f1;
+    color: #4338ca;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.ellipsis {
+    display: inline-block;
+    padding: 0 0.5rem;
+    color: #6b7280;
 }
 
 .empty-state {
     margin-top: 1rem;
     color: #4b5563;
+}
+
+@media (max-width: 480px) {
+    .pagination-meta {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+
+    .range {
+        text-align: center;
+    }
+
+    .page-status {
+        display: none;
+    }
+
+    .first-btn,
+    .last-btn {
+        display: none;
+    }
 }
 </style>
