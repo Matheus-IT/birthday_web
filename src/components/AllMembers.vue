@@ -130,7 +130,7 @@ async function fetchMembers(page = currentPage.value) {
     loadError.value = null
 
     try {
-        const storedToken = localStorage.getItem('authToken') || import.meta.env.VITE_API_TOKEN
+        const storedToken = localStorage.getItem('authToken')
         const headers = storedToken ? { 'Authorization': `Token ${storedToken}` } : {}
         const url = apiUrls.getAllMembers({ page, pageSize: pageSize.value, search: searchQuery.value })
         const res = await fetch(url, { headers })
