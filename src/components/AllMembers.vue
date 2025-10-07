@@ -3,8 +3,9 @@ import MemberItem from './MemberItem.vue'
 import MemberModal from './MemberModal.vue'
 import { apiUrls } from '../api/urls.js'
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 
-
+const router = useRouter()
 const members = ref([])
 const loading = ref(false)
 const loadError = ref(null)
@@ -134,6 +135,22 @@ async function fetchMembers(page = currentPage.value) {
         const headers = storedToken ? { 'Authorization': `Token ${storedToken}` } : {}
         const url = apiUrls.getAllMembers({ page, pageSize: pageSize.value, search: searchQuery.value })
         const res = await fetch(url, { headers })
+
+        if (res.status === 401) {
+            // Remove o token inválido
+            localStorage.removeItem('authToken')
+            
+            // Limpa os dados
+            members.value = []
+            totalItems.value = 0
+            paginationLinks.value = { next: null, previous: null }
+            currentPage.value = 1
+            loadError.value = null
+            
+            // Redireciona para login usando Vue Router
+            router.push({ name: 'login' })
+            return
+        }
 
         if (!res.ok) {
             throw new Error(`HTTP ${res.status}`)
