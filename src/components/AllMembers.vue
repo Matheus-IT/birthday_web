@@ -241,6 +241,10 @@ function goToPage(page) {
     }
 }
 
+function goToCreateMember() {
+    router.push({ name: 'member-create' })
+}
+
 function onPageSizeChange(event) {
     const newSize = Number(event.target.value)
 
@@ -290,6 +294,9 @@ onMounted(() => {
                     <input type="text" placeholder="Buscar membro por nome..." v-model="searchQuery"
                         @keyup.enter="fetchMembers(1)">
                 </div>
+                <button type="button" class="create-member-btn" @click="goToCreateMember" :disabled="loading">
+                    + Novo membro
+                </button>
             </div>
             <ul v-if="members.length" class="member-list">
                 <li style="list-style:none" v-for="member in members" :key="member.name">
@@ -349,6 +356,30 @@ onMounted(() => {
     gap: 0.75rem;
     /* Shared control height for select, input and button */
     --control-h: 36px;
+}
+
+.create-member-btn {
+    height: var(--control-h);
+    padding: 0 1rem;
+    border-radius: 8px;
+    border: none;
+    background: #6366f1;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 10px 20px -14px rgba(79, 70, 229, 0.9);
+    margin-left: auto;
+}
+
+.create-member-btn:hover:enabled {
+    background: #4f46e5;
+}
+
+.create-member-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 .all-members-search {
@@ -544,6 +575,11 @@ onMounted(() => {
 
     .all-members-search {
         width: 100%;
+    }
+
+    .create-member-btn {
+        width: 100%;
+        margin-left: 0;
     }
 
     .pagination-meta {

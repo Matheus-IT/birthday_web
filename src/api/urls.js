@@ -14,5 +14,6 @@ export const apiUrls = {
 
         return `${BASE_API_URL}/members/?${searchParams.toString()}`
     },
+    postNewMember: () => `${BASE_API_URL}/members/`,
     login: () => `${BASE_API_URL}/login/`,
 }
