@@ -30,22 +30,22 @@ async function onSubmit(e) {
     e.preventDefault()
     error.value = ''
 
-
     let token = '';
-
-    const res = await fetch(apiUrls.login(), {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: email.value,
-            password: password.value,
-        }),
-    })
 
     try {
         loading.value = true
+
+        const res = await fetch(apiUrls.login(), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: email.value,
+                password: password.value,
+            }),
+        })
+
         console.log('Response login:', res);
 
         const data = await res.json()
