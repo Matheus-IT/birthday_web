@@ -20,6 +20,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { doFormattingOfBirthday } from '../utils.js'
 
 const props = defineProps({
     name: { type: String, required: true },
@@ -45,27 +46,13 @@ const monthShort = computed(() =>
 
 const formattedBirthday = computed(() => {
     // If we have a valid Date, format it as dd/mm/yyyy (zero-padded)
+
     if (parsedDate.value) {
-        const d = parsedDate.value
-        const day = String(d.getDate()).padStart(2, '0')
-        const month = String(d.getMonth() + 1).padStart(2, '0')
-        const year = d.getFullYear()
-        return `${day}/${month}/${year}`
+        return doFormattingOfBirthday(parsedDate.value)
+    } else {
+        return doFormattingOfBirthday(props.birthday)
     }
 
-    // If the value wasn't parsed, try to reformat known string patterns into dd/mm/yyyy
-    if (typeof props.birthday === 'string') {
-        // yyyy-mm-dd -> dd/mm/yyyy
-        const ymd = props.birthday.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-        if (ymd) return `${ymd[3]}/${ymd[2]}/${ymd[1]}`
-
-        // dd/mm/yyyy -> dd/mm/yyyy (already desired)
-        const dmy = props.birthday.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
-        if (dmy) return `${dmy[1]}/${dmy[2]}/${dmy[3]}`
-    }
-
-    // Fallback when the input cannot be parsed
-    return '--/--/----'
 })
 
 const isBirthdayToday = computed(() => Boolean(props.isBirthdayToday))

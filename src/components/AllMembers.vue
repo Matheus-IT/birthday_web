@@ -4,6 +4,7 @@ import MemberModal from './MemberModal.vue'
 import { apiUrls } from '../api/urls.js'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { toBirthdayDate } from '../utils.js'
 
 const router = useRouter()
 const members = ref([])
@@ -18,14 +19,7 @@ const pageSizeOptions = [5, 10, 20, 50]
 const totalItems = ref(0)
 const paginationLinks = ref({ next: null, previous: null })
 
-function toBirthdayDate(rawDate) {
-    if (!rawDate) {
-        return null
-    }
 
-    const date = new Date(`${rawDate}T12:00:00`)
-    return Number.isNaN(date.getTime()) ? null : date
-}
 
 function normalizeBirthdayFlag(rawFlag, birthdayDate) {
     const derivedFromDate = birthdayDate instanceof Date && !Number.isNaN(birthdayDate.getTime())
@@ -206,6 +200,27 @@ function openMember(member) {
 function closeModal() {
     selectedMember.value = null
 }
+// Delete a member by id
+async function deleteMember(id) {
+    const storedToken = localStorage.getItem('authToken')
+    const headers = storedToken ? { 'Authorization': `Token ${storedToken}` } : {}
+    try {
+        const res = await fetch(apiUrls.deleteMember(id), { method: 'DELETE', headers })
+        if (res.status === 401) {
+            localStorage.removeItem('authToken')
+            router.push({ name: 'login' })
+            return
+        }
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`)
+        }
+        closeModal()
+        // Refresh list after deletion
+        fetchMembers(currentPage.value)
+    } catch (error) {
+        console.error('Failed to delete member', error)
+    }
+}
 
 function goToNextPage() {
     if (hasNextPage.value) {
@@ -333,8 +348,14 @@ onMounted(() => {
                 </div>
             </div>
 
-            <MemberModal v-if="selectedMember" :name="selectedMember.name" :birthday="selectedMember.birthday"
-                @close="closeModal" />
+            <MemberModal
+                v-if="selectedMember"
+                :id="selectedMember.id"
+                :name="selectedMember.name"
+                :birthday="selectedMember.birthday"
+                @close="closeModal"
+                @delete="deleteMember"
+            />
         </div>
 
     </section>

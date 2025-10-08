@@ -2,17 +2,21 @@
     <div class="modal-backdrop" @click.self="close">
         <div class="modal" role="dialog" aria-modal="true" aria-label="Member details">
             <header class="modal-header">
-                <h3>{{ name }}</h3>
+                <p>Detalhes do membro</p>
                 <button class="close-btn" @click="close" aria-label="Close">×</button>
             </header>
-
+            
             <section class="modal-body">
-                <p><strong>Birthday:</strong> {{ formattedBirthday }}</p>
-                <p v-if="age !== null"><strong>Age:</strong> {{ age }}</p>
+                <p><strong>Nome: </strong>{{ name }}</p>    
+                <p><strong>Aniversário: </strong>{{ formattedBirthday }}</p>
+                <p v-if="age !== null"><strong>Idade: </strong>{{ age }}</p>
             </section>
 
             <footer class="modal-footer">
-                <button @click="close">Close</button>
+                <button class="close-btn" @click="close">Fechar</button>
+                <button class="delete-btn" @click="onDelete">
+                    Delete
+                </button>
             </footer>
         </div>
     </div>
@@ -20,13 +24,15 @@
 
 <script setup>
 import { computed } from 'vue'
+import { doFormattingOfBirthday } from '../utils.js'
 
 const props = defineProps({
+    id: { type: [String, Number], required: true },
     name: { type: String, required: true },
     birthday: { type: [String, Date], required: true }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'delete'])
 
 const parsedDate = computed(() => {
     if (props.birthday instanceof Date) return props.birthday
@@ -34,10 +40,7 @@ const parsedDate = computed(() => {
     return isNaN(d.getTime()) ? null : d
 })
 
-const formattedBirthday = computed(() =>
-    parsedDate.value
-        ? parsedDate.value.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
-        : String(props.birthday)
+const formattedBirthday = computed(() => doFormattingOfBirthday(parsedDate.value)
 )
 
 const age = computed(() => {
@@ -52,6 +55,9 @@ const age = computed(() => {
 
 function close() {
     emit('close')
+}
+function onDelete() {
+    emit('delete', props.id)
 }
 </script>
 
@@ -94,10 +100,6 @@ function close() {
 }
 
 .close-btn {
-    background: transparent;
-    border: none;
-    font-size: 1.4rem;
-    line-height: 1;
-    cursor: pointer;
+
 }
 </style>
