@@ -48,9 +48,9 @@ const formattedBirthday = computed(() => {
     // If we have a valid Date, format it as dd/mm/yyyy (zero-padded)
 
     if (parsedDate.value) {
-        return doFormattingOfBirthday(parsedDate.value)
+        return doFormattingOfBirthday(parsedDate.value, true)
     } else {
-        return doFormattingOfBirthday(props.birthday)
+        return doFormattingOfBirthday(props.birthday, true)
     }
 
 })

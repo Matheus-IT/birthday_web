@@ -7,7 +7,7 @@ export function toBirthdayDate(rawDate) {
     return Number.isNaN(date.getTime()) ? null : date
 }
 
-export function doFormattingOfBirthday(dateInput) {
+export function doFormattingOfBirthday(dateInput, noYear = false) {
     if (!dateInput) return '--/--/----'
 
     // If the value wasn't parsed, try to reformat known string patterns into dd/mm/yyyy
@@ -25,5 +25,8 @@ export function doFormattingOfBirthday(dateInput) {
     const day = String(d.getDate()).padStart(2, '0')
     const month = String(d.getMonth() + 1).padStart(2, '0')
     const year = d.getFullYear()
+    if (noYear) {
+        return `${day}/${month}`
+    }
     return `${day}/${month}/${year}`
 }
