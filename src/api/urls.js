@@ -17,4 +17,5 @@ export const apiUrls = {
     postNewMember: () => `${BASE_API_URL}/members/`,
     login: () => `${BASE_API_URL}/login/`,
     deleteMember: (id) => `${BASE_API_URL}/members/${id}/`,
+    updateMember: (id) => `${BASE_API_URL}/members/${id}/`,
 }

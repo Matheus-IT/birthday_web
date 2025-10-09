@@ -1,6 +1,7 @@
 <script setup>
 import MemberItem from './MemberItem.vue'
 import MemberModal from './MemberModal.vue'
+import MemberEditModal from './MemberEditModal.vue'
 import { apiUrls } from '../api/urls.js'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -11,6 +12,7 @@ const members = ref([])
 const loading = ref(false)
 const loadError = ref(null)
 const selectedMember = ref(null)
+const editingMember = ref(null)
 const searchQuery = ref('')
 
 const currentPage = ref(1)
@@ -200,6 +202,24 @@ function openMember(member) {
 function closeModal() {
     selectedMember.value = null
 }
+
+function openEditModal(member) {
+    if (!member) return
+    const normalizedBirthday = toBirthdayDate(member.birthday)
+    editingMember.value = {
+        ...member,
+        birthday: normalizedBirthday ?? member.birthday,
+    }
+}
+
+function closeEditModal() {
+    editingMember.value = null
+}
+
+async function handleMemberUpdated() {
+    closeEditModal()
+    await fetchMembers(currentPage.value)
+}
 // Delete a member by id
 async function deleteMember(id) {
     const storedToken = localStorage.getItem('authToken')
@@ -315,8 +335,13 @@ onMounted(() => {
             </div>
             <ul v-if="members.length" class="member-list">
                 <li style="list-style:none" v-for="member in members" :key="member.name">
-                    <MemberItem :name="member.name" :birthday="member.birthday"
-                        :is-birthday-today="member.isBirthdayToday" @select="openMember(member)" />
+                    <MemberItem
+                        :name="member.name"
+                        :birthday="member.birthday"
+                        :is-birthday-today="member.isBirthdayToday"
+                        @select="openMember(member)"
+                        @edit="openEditModal(member)"
+                    />
                 </li>
             </ul>
             <p v-else-if="!loading && !loadError" class="empty-state">Nenhum membro encontrado.</p>
@@ -355,6 +380,13 @@ onMounted(() => {
                 :birthday="selectedMember.birthday"
                 @close="closeModal"
                 @delete="deleteMember"
+            />
+
+            <MemberEditModal
+                v-if="editingMember"
+                :member="editingMember"
+                @close="closeEditModal"
+                @updated="handleMemberUpdated"
             />
         </div>
 
