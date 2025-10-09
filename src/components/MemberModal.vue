@@ -15,7 +15,7 @@
                         <span class="detail-value">{{ name }}</span>
                     </li>
                     <li>
-                        <span class="detail-label">Aniversário</span>
+                        <span class="detail-label">Nascimento</span>
                         <span class="detail-value">{{ formattedBirthday }}</span>
                     </li>
                     <li v-if="age !== null">
