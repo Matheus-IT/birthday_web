@@ -9,28 +9,44 @@
             </header>
 
             <section class="modal-body">
-                <ul class="detail-list">
-                    <li>
-                        <span class="detail-label">Nome</span>
-                        <span class="detail-value">{{ name }}</span>
-                    </li>
-                    <li>
-                        <span class="detail-label">Nascimento</span>
-                        <span class="detail-value">{{ formattedBirthday }}</span>
-                    </li>
-                    <li v-if="age !== null">
-                        <span class="detail-label">Idade</span>
-                        <span class="detail-value">{{ age }}</span>
-                    </li>
-                </ul>
+                <template v-if="!isConfirmingDeletion">
+                    <ul class="detail-list">
+                        <li>
+                            <span class="detail-label">Nome</span>
+                            <span class="detail-value">{{ name }}</span>
+                        </li>
+                        <li>
+                            <span class="detail-label">Nascimento</span>
+                            <span class="detail-value">{{ formattedBirthday }}</span>
+                        </li>
+                        <li v-if="age !== null">
+                            <span class="detail-label">Idade</span>
+                            <span class="detail-value">{{ age }}</span>
+                        </li>
+                    </ul>
+                </template>
+                <div v-else class="confirm-delete">
+                    <h4 class="confirm-title">Confirmar exclusão</h4>
+                    <p class="confirm-text">
+                        Tem certeza de que deseja excluir <strong>{{ name }}</strong>? Esta ação não pode ser desfeita.
+                    </p>
+                </div>
             </section>
 
-            <footer class="modal-footer">
+            <footer class="modal-footer" v-if="!isConfirmingDeletion">
                 <button class="action-btn action-btn--ghost" type="button" @click="close">
                     Fechar
                 </button>
-                <button class="action-btn action-btn--danger" type="button" @click="onDelete">
-                    Delete
+                <button class="action-btn action-btn--danger" type="button" @click="startDeleteConfirmation">
+                    Excluir
+                </button>
+            </footer>
+            <footer class="modal-footer" v-else>
+                <button class="action-btn action-btn--ghost" type="button" @click="cancelDelete">
+                    Cancelar
+                </button>
+                <button class="action-btn action-btn--danger action-btn--danger-solid" type="button" @click="confirmDelete">
+                    Confirmar exclusão
                 </button>
             </footer>
         </div>
@@ -38,7 +54,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { doFormattingOfBirthday } from '../utils.js'
 
 const props = defineProps({
@@ -48,6 +64,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'delete'])
+
+const isConfirmingDeletion = ref(false)
 
 const parsedDate = computed(() => {
     if (props.birthday instanceof Date) return props.birthday
@@ -68,11 +86,26 @@ const age = computed(() => {
 })
 
 function close() {
+    isConfirmingDeletion.value = false
     emit('close')
 }
-function onDelete() {
-    emit('delete', props.id)
+function startDeleteConfirmation() {
+    isConfirmingDeletion.value = true
 }
+function cancelDelete() {
+    isConfirmingDeletion.value = false
+}
+function confirmDelete() {
+    emit('delete', props.id)
+    isConfirmingDeletion.value = false
+}
+
+watch(
+    () => props.id,
+    () => {
+        isConfirmingDeletion.value = false
+    }
+)
 </script>
 
 <style scoped>
@@ -207,5 +240,29 @@ function onDelete() {
 
 .action-btn--danger:hover {
     background: #b91c1c;
+}
+
+.action-btn--danger-solid {
+    border-color: #dc2626;
+}
+
+.confirm-delete {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+}
+
+.confirm-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #dc2626;
+}
+
+.confirm-text {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
 }
 </style>
